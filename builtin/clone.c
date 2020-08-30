@@ -851,8 +851,21 @@ static int checkout(int submodule_progress)
 	return err;
 }
 
+static int git_clone_config(const char *k, const char *v, void *cb)
+{
+	return git_default_config(k, v, cb);
+}
+
 static int write_one_config(const char *key, const char *value, void *data)
 {
+	/*
+	 * give git_config_default a chance to write config values back to the environment, since
+	 * git_config_set_multivar_gently only deals with config-file writes
+	 */
+	int apply_failed = git_default_config(key, value, data);
+	if (apply_failed)
+		return apply_failed;
+
 	return git_config_set_multivar_gently(key,
 					      value ? value : "true",
 					      CONFIG_REGEX_NONE, 0);
@@ -964,6 +977,9 @@ int cmd_clone(int argc, const char **argv, const char *prefix)
 	struct strvec ref_prefixes = STRVEC_INIT;
 
 	packet_trace_identity("clone");
+
+	git_config(git_clone_config, NULL);
+
 	argc = parse_options(argc, argv, prefix, builtin_clone_options,
 			     builtin_clone_usage, 0);
 
@@ -1125,9 +1141,8 @@ int cmd_clone(int argc, const char **argv, const char *prefix)
 	if (real_git_dir)
 		git_dir = real_git_dir;
 
+	/* additional config can be injected with -c, make sure it's included */
 	write_config(&option_config);
-
-	git_config(git_default_config, NULL);
 
 	if (option_bare) {
 		if (option_mirror)
