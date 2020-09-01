@@ -19,6 +19,22 @@ test_expect_success 'clone -o' '
 
 '
 
+test_expect_success 'disallows --bare with --origin' '
+
+	test_expect_code 128 git clone -o foo --bare parent clone-bare-o 2>err &&
+	test_debug "cat err" &&
+	test_i18ngrep "\-\-bare and --origin foo options are incompatible" err
+
+'
+
+test_expect_success 'disallows --bare with --separate-git-dir' '
+
+	test_expect_code 128 git clone --bare --separate-git-dir dot-git-destiation parent clone-bare-sgd 2>err &&
+	test_debug "cat err" &&
+	test_i18ngrep "\-\-bare and --separate-git-dir are incompatible" err
+
+'
+
 test_expect_success 'redirected clone does not show progress' '
 
 	git clone "file://$(pwd)/parent" clone-redirected >out 2>err &&
