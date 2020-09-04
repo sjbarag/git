@@ -43,6 +43,36 @@ test_expect_success 'disallows --bare with --separate-git-dir' '
 
 '
 
+test_expect_success 'uses "origin" for default remote name' '
+
+	git clone parent clone-default-origin &&
+	(cd clone-default-origin && git rev-parse --verify refs/remotes/origin/master)
+
+'
+
+test_expect_success 'prefers config "clone.defaultRemoteName" over default' '
+
+	test_config_global clone.defaultRemoteName upstream &&
+	git clone parent clone-config-origin &&
+	(cd clone-config-origin && git rev-parse --verify refs/remotes/upstream/master)
+
+'
+
+test_expect_success 'prefers -c config over normal config' '
+
+	test_config_global clone.defaultRemoteName upstream &&
+	git clone -c clone.defaultRemoteName=foo parent clone-inline-config-origin &&
+	(cd clone-inline-config-origin && git rev-parse --verify refs/remotes/foo/master)
+
+'
+
+test_expect_success 'prefers --origin over config "clone.defaultRemoteName"' '
+
+	git clone -c clone.defaultRemoteName=foo --origin bar parent clone-o-and-config-origin &&
+	(cd clone-o-and-config-origin && git rev-parse --verify refs/remotes/bar/master)
+
+'
+
 test_expect_success 'redirected clone does not show progress' '
 
 	git clone "file://$(pwd)/parent" clone-redirected >out 2>err &&
